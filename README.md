@@ -1,7 +1,3 @@
-Here's a detailed GitHub-style explanation of the code, including the key formulas, assumptions, and decisions made in the implementation:
-
----
-
 # Mortgage and Investment Simulation App
 
 This Shiny application simulates the financial outcomes of three scenarios: 
