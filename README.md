@@ -1,7 +1,3 @@
-Certainly! Below is your **Mortgage and Investment Simulation App** documentation formatted for GitHub Markdown. To ensure that the LaTeX formulas render correctly on GitHub, I've replaced `\[ ... \]` with `$$ ... $$` for display equations and `$ ... $` for inline equations. Additionally, I've made some minor formatting adjustments for better readability.
-
----
-
 # Mortgage and Investment Simulation App
 
 This Shiny application simulates the financial outcomes of three scenarios:
