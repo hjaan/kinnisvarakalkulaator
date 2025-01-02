@@ -10,7 +10,6 @@ library(plotly)    # For interactive plots
 # --------------------------------------------
 # Helper Functions
 # --------------------------------------------
-
 monthly_interest_rate <- function(annual_rate) {
   return(annual_rate / 12.0)
 }
@@ -43,19 +42,19 @@ simulate_mortgage_and_investing <- function(
   r_p <- monthly_interest_rate(annual_property_growth)# property
   
   # Initialize vectors
-  month                <- 1:months
-  mortgage_payment     <- numeric(months)
-  total_interest_paid  <- numeric(months)  # cumulative interest
-  monthly_principal_paid <- numeric(months)
+  month                   <- 1:months
+  mortgage_payment        <- numeric(months)
+  total_interest_paid     <- numeric(months)  # cumulative interest
+  monthly_principal_paid  <- numeric(months)
   
-  invested_this_month  <- numeric(months)
-  property_value       <- numeric(months)
-  inv_balance          <- numeric(months)
+  invested_this_month     <- numeric(months)
+  property_value          <- numeric(months)
+  inv_balance             <- numeric(months)
   
-  inv_contrib          <- numeric(months)  # cumulative investment
-  inv_gains            <- numeric(months)
-  property_app         <- numeric(months)
-  real_estate_equity   <- numeric(months)
+  inv_contrib             <- numeric(months)  # cumulative investment
+  inv_gains               <- numeric(months)
+  property_app            <- numeric(months)
+  real_estate_equity      <- numeric(months)
   
   # Tracking variables
   curr_principal   <- principal
@@ -70,7 +69,6 @@ simulate_mortgage_and_investing <- function(
   }
   
   for (m in seq_len(months)) {
-    
     # 1) Property grows
     property_val <- property_val * (1 + r_p)
     
@@ -112,18 +110,18 @@ simulate_mortgage_and_investing <- function(
     running_interest <- running_interest + monthly_interest
     
     # 8) Store values
-    mortgage_payment[m]       <- mort_payment
-    total_interest_paid[m]    <- running_interest
-    monthly_principal_paid[m] <- principal_pay
-    invested_this_month[m]    <- invest_this
+    mortgage_payment[m]        <- mort_payment
+    total_interest_paid[m]     <- running_interest
+    monthly_principal_paid[m]  <- principal_pay
+    invested_this_month[m]     <- invest_this
     
-    property_value[m]         <- property_val
-    inv_balance[m]            <- investment
+    property_value[m]          <- property_val
+    inv_balance[m]             <- investment
     
-    inv_contrib[m]            <- cum_investment
-    inv_gains[m]              <- investment - cum_investment
-    property_app[m]           <- property_val - initial_property_value
-    real_estate_equity[m]     <- property_val - curr_principal
+    inv_contrib[m]             <- cum_investment
+    inv_gains[m]               <- investment - cum_investment
+    property_app[m]            <- property_val - initial_property_value
+    real_estate_equity[m]      <- property_val - curr_principal
   }
   
   df <- data.frame(
@@ -141,8 +139,8 @@ simulate_mortgage_and_investing <- function(
   )
   
   # total_equity = real_estate_equity + inv_balance
-  df$total_equity <- df$real_estate_equity + df$inv_balance
-  df$total_principal_paid <- cumsum(df$monthly_principal_paid)
+  df$total_equity          <- df$real_estate_equity + df$inv_balance
+  df$total_principal_paid  <- cumsum(df$monthly_principal_paid)
   
   return(df)
 }
@@ -158,23 +156,22 @@ simulate_renting_and_investing <- function(
   months <- years * 12
   r_i <- annual_invest_return / 12
   
-  month_vec <- 1:months
-  inv_balance  <- numeric(months)
-  inv_contrib  <- numeric(months)
-  inv_gains    <- numeric(months)
-  monthly_rent <- numeric(months)
-  monthly_invested <- numeric(months)
+  month_vec         <- 1:months
+  inv_balance       <- numeric(months)
+  inv_contrib       <- numeric(months)
+  inv_gains         <- numeric(months)
+  monthly_rent      <- numeric(months)
+  monthly_invested  <- numeric(months)
   
-  balance <- 0
-  cum_invested <- 0
+  balance       <- 0
+  cum_invested  <- 0
   
-  # We approximate that each month, 
-  # rent grows based on annual_rent_increase
   for (m in month_vec) {
-    yearIndex   <- (m - 1) %/% 12
-    rentNow     <- initial_rent * (1 + annual_rent_increase)^yearIndex
+    # Which 'year' are we in?
+    yearIndex <- (m - 1) %/% 12
+    rentNow   <- initial_rent * (1 + annual_rent_increase)^yearIndex
     
-    # monthly leftover = income - expenses
+    # leftover = income - expenses - rent
     leftover_for_invest = monthly_income - monthly_expenses - rentNow
     if (leftover_for_invest < 0) leftover_for_invest <- 0
     
@@ -185,30 +182,32 @@ simulate_renting_and_investing <- function(
     balance <- balance + leftover_for_invest
     cum_invested <- cum_invested + leftover_for_invest
     
-    inv_balance[m]  <- balance
-    inv_contrib[m]  <- cum_invested
-    inv_gains[m]    <- balance - cum_invested
-    monthly_rent[m] <- rentNow
+    inv_balance[m]      <- balance
+    inv_contrib[m]      <- cum_invested
+    inv_gains[m]        <- balance - cum_invested
+    monthly_rent[m]     <- rentNow
     monthly_invested[m] <- leftover_for_invest
   }
   
   df <- data.frame(
-    month              = month_vec,
-    inv_balance        = inv_balance,
-    inv_contrib        = inv_contrib,
-    inv_gains          = inv_gains,
-    monthly_rent       = monthly_rent,
-    monthly_invested   = monthly_invested,
-    property_value     = NA,
-    property_app       = NA,
-    total_interest_paid= NA,
+    month                = month_vec,
+    inv_balance          = inv_balance,
+    inv_contrib          = inv_contrib,
+    inv_gains            = inv_gains,
+    monthly_rent         = monthly_rent,
+    monthly_invested     = monthly_invested,
+    property_value       = NA,
+    property_app         = NA,
+    total_interest_paid  = NA,
     monthly_principal_paid= NA,
-    total_principal_paid= NA,
-    real_estate_equity = NA
+    total_principal_paid = NA,
+    real_estate_equity   = NA
   )
   
+  # For renting, real estate equity is 0, so total_equity is just the investment
   df$real_estate_equity[is.na(df$real_estate_equity)] <- 0
-  df$total_equity <- df$real_estate_equity + df$inv_balance
+  df$total_equity <- df$inv_balance
+  
   return(df)
 }
 
@@ -222,7 +221,6 @@ ui <- fluidPage(
     sidebarPanel(
       h3("Simulation Parameters"),
       
-      # Updated default values per request
       numericInput("monthly_income", "Monthly Income (€):", 
                    value = 2800, min = 0, step = 100),
       helpText("Enter your total monthly income."),
@@ -249,35 +247,28 @@ ui <- fluidPage(
       
       hr(),
       
-      # Display read-only mortgage payment & investment for Option A
       h4("Option A (Property 1) Calculated Allocations"),
       textOutput("optionA_mortgagePayment"),
       textOutput("optionA_investment"),
       
       hr(),
-      # Display read-only mortgage payment & investment for Option B
       h4("Option B (Property 2) Calculated Allocations"),
       textOutput("optionB_mortgagePayment"),
       textOutput("optionB_investment"),
       
       hr(),
-      # Display read-only rent and investment for Option C
       h4("Option C (Rent & Invest) Calculated Allocations"),
       textOutput("optionC_rentPayment"),
       textOutput("optionC_investment"),
       
       hr(),
-      # Interval for the Equity Table only
       sliderInput("interval_years", "Analysis Interval (Years):", 
                   min = 1, max = 30, value = 5, step = 1),
       
-      # Slider for x-axis range in plots
       sliderInput("maxPlotYears", "Show up to Year:", 
                   min = 1, max = 30, value = 10, step = 1),
       
       hr(),
-      
-      # Option A
       h4("Option A: Property 1"),
       numericInput("full_priceA", "Full Price (€):", value = 200000, min = 0, step = 1000),
       numericInput("down_paymentA", "Down Payment (€):", value = 20000, min = 0, step = 1000),
@@ -286,8 +277,6 @@ ui <- fluidPage(
                   selected = "annuity"),
       
       hr(),
-      
-      # Option B
       h4("Option B: Property 2"),
       numericInput("full_priceB", "Full Price (€):", value = 150000, min = 0, step = 1000),
       numericInput("down_paymentB", "Down Payment (€):", value = 15000, min = 0, step = 1000),
@@ -296,13 +285,9 @@ ui <- fluidPage(
                   selected = "annuity"),
       
       hr(),
-      
-      # Option C
       h4("Option C: Rent & Invest"),
       numericInput("start_investC", "Initial Investment (€):", 
                    value = 20000, min = 0, step = 1000),
-      
-      # Removed 'monthly_investC'
       numericInput("initial_rentC", "Initial Monthly Rent (€):", 
                    value = 550, min = 0, step = 50),
       numericInput("annual_rent_increaseC", "Annual Rent Increase (%):", 
@@ -314,7 +299,6 @@ ui <- fluidPage(
     
     mainPanel(
       tabsetPanel(
-        
         tabPanel("Equity Table",
                  br(),
                  HTML("<b>Columns Explanation:</b><br>
@@ -323,6 +307,7 @@ ui <- fluidPage(
                         <li><b>PropertyValue(A/B/C):</b> Estimated property value (NA for renting).</li>
                         <li><b>PropertyApp(A/B/C):</b> How much the property has appreciated relative to its initial value.</li>
                         <li><b>TotalPrincipalPaid(A/B):</b> Total principal paid so far (mortgage). NA for rent.</li>
+                        <li><b>%Owned(A/B/C):</b> The percentage of the property you own (0 or NA for renting).</li>
                         <li><b>TotalInterestPaid(A/B):</b> Total interest paid so far (mortgage). NA for rent.</li>
                         <li><b>InvContrib(A/B/C):</b> Cumulative money contributed into investments.</li>
                         <li><b>InvGains(A/B/C):</b> Net growth in the investment portion (InvBalance - InvContrib).</li>
@@ -373,6 +358,14 @@ ui <- fluidPage(
                         </li>
                       </ul>"),
                  plotlyOutput("plotAllDetailedGains", height = "600px")
+        ),
+        
+        # NEW TAB: Compare Mortgage Styles
+        tabPanel("Compare Mortgage Styles",
+                 br(),
+                 plotlyOutput("plotCompareMortgageStyles", height = "600px"),
+                 br(),
+                 plotlyOutput("plotCompareMortgageStylesPerc", height = "600px")  # Our new additional plot
         )
       )
     )
@@ -411,6 +404,7 @@ server <- function(input, output) {
         principalA, input$annual_mort_rate / 100, totalTermYears
       )
     } else {
+      # equal_principal approach
       required_mort_payment <- (principalA / (totalTermYears * 12)) +
         (principalA * (input$annual_mort_rate / 100) / 12)
     }
@@ -506,9 +500,7 @@ server <- function(input, output) {
   # --------------------------
   # Option C: Rent & Invest
   # --------------------------
-  # We'll display the first-month rent & investment leftover
   monthlyAllocC <- reactive({
-    # first month rent = initial_rentC
     rent_first_month <- input$initial_rentC
     invests <- common_pool() - rent_first_month
     if (invests < 0) {
@@ -531,7 +523,6 @@ server <- function(input, output) {
   })
   
   dataC <- reactive({
-    # We'll pass monthly_income & monthly_expenses
     simulate_renting_and_investing(
       monthly_income       = input$monthly_income,
       monthly_expenses     = input$monthly_expenses,
@@ -545,6 +536,7 @@ server <- function(input, output) {
   # --------------------------------------------
   # Equity Table
   # --------------------------------------------
+  # Modified to include RealEstateEquity & PctOwned
   equity_at_year <- function(data_dict, year) {
     m <- year * 12
     if (m > nrow(data_dict)) m <- nrow(data_dict)
@@ -553,6 +545,7 @@ server <- function(input, output) {
       PropertyApp         = data_dict$property_app[m],
       TotalInterestPaid   = data_dict$total_interest_paid[m],
       TotalPrincipalPaid  = data_dict$total_principal_paid[m],
+      RealEstateEquity    = data_dict$real_estate_equity[m],
       InvContrib          = data_dict$inv_contrib[m],
       InvGains            = data_dict$inv_gains[m],
       InvBalance          = data_dict$inv_balance[m],
@@ -584,42 +577,63 @@ server <- function(input, output) {
     
     dfOut <- data.frame(Year = yrs_vector)
     
-    # Fill A columns
+    # Fill columns for A
     for (i in seq_along(yrs_vector)) {
       dfOut$PropertyValueA[i]      <- get_val(eqA[[i]], "PropertyValue")
       dfOut$PropertyAppA[i]        <- get_val(eqA[[i]], "PropertyApp")
-      dfOut$TotalInterestPaidA[i]  <- get_val(eqA[[i]], "TotalInterestPaid")
       dfOut$TotalPrincipalPaidA[i] <- get_val(eqA[[i]], "TotalPrincipalPaid")
+      
+      # % Owned A
+      propValA <- get_val(eqA[[i]], "PropertyValue")
+      eqValA   <- get_val(eqA[[i]], "RealEstateEquity")
+      pctA <- if (propValA > 0) (eqValA / propValA * 100) else 0
+      dfOut$PctOwnedA[i]           <- pctA
+      
+      dfOut$TotalInterestPaidA[i]  <- get_val(eqA[[i]], "TotalInterestPaid")
       dfOut$InvContribA[i]         <- get_val(eqA[[i]], "InvContrib")
       dfOut$InvGainsA[i]           <- get_val(eqA[[i]], "InvGains")
       dfOut$InvBalanceA[i]         <- get_val(eqA[[i]], "InvBalance")
       dfOut$TotalEquityA[i]        <- get_val(eqA[[i]], "TotalEquity")
     }
     
-    # Fill B columns
+    # Fill columns for B
     for (i in seq_along(yrs_vector)) {
       dfOut$PropertyValueB[i]      <- get_val(eqB[[i]], "PropertyValue")
       dfOut$PropertyAppB[i]        <- get_val(eqB[[i]], "PropertyApp")
-      dfOut$TotalInterestPaidB[i]  <- get_val(eqB[[i]], "TotalInterestPaid")
       dfOut$TotalPrincipalPaidB[i] <- get_val(eqB[[i]], "TotalPrincipalPaid")
+      
+      propValB <- get_val(eqB[[i]], "PropertyValue")
+      eqValB   <- get_val(eqB[[i]], "RealEstateEquity")
+      pctB <- if (propValB > 0) (eqValB / propValB * 100) else 0
+      dfOut$PctOwnedB[i]           <- pctB
+      
+      dfOut$TotalInterestPaidB[i]  <- get_val(eqB[[i]], "TotalInterestPaid")
       dfOut$InvContribB[i]         <- get_val(eqB[[i]], "InvContrib")
       dfOut$InvGainsB[i]           <- get_val(eqB[[i]], "InvGains")
       dfOut$InvBalanceB[i]         <- get_val(eqB[[i]], "InvBalance")
       dfOut$TotalEquityB[i]        <- get_val(eqB[[i]], "TotalEquity")
     }
     
-    # Fill C columns
+    # Fill columns for C
     for (i in seq_along(yrs_vector)) {
       dfOut$PropertyValueC[i]      <- get_val(eqC[[i]], "PropertyValue")
       dfOut$PropertyAppC[i]        <- get_val(eqC[[i]], "PropertyApp")
-      dfOut$TotalInterestPaidC[i]  <- get_val(eqC[[i]], "TotalInterestPaid")
       dfOut$TotalPrincipalPaidC[i] <- get_val(eqC[[i]], "TotalPrincipalPaid")
+      
+      # For renting, we have 0 or NA for equity, so 0% owned
+      dfOut$PctOwnedC[i]           <- 0
+      
+      dfOut$TotalInterestPaidC[i]  <- get_val(eqC[[i]], "TotalInterestPaid")
       dfOut$InvContribC[i]         <- get_val(eqC[[i]], "InvContrib")
       dfOut$InvGainsC[i]           <- get_val(eqC[[i]], "InvGains")
       dfOut$InvBalanceC[i]         <- get_val(eqC[[i]], "InvBalance")
       dfOut$TotalEquityC[i]        <- get_val(eqC[[i]], "TotalEquity")
     }
     
+    # Convert Year to integer
+    dfOut$Year <- as.integer(dfOut$Year)
+    
+    # Format numeric columns (remove decimals)
     numeric_cols <- setdiff(colnames(dfOut), "Year")
     for (col in numeric_cols) {
       dfOut[[col]] <- formatC(dfOut[[col]], format="f", big.mark=" ", digits=0)
@@ -640,7 +654,18 @@ server <- function(input, output) {
   
   # --------------------------------------------
   # PLOTS
-  # --------------------------------------------
+  # A small helper to fix Plotly hover to no decimals:
+  no_decimal_plotly <- function(g) {
+    # Attempt to set all y-axes to .0f
+    for(i in 1:6) {
+      ax <- paste0("yaxis", ifelse(i==1, "", i))
+      if(!is.null(g$x$layout[[ax]])) {
+        g$x$layout[[ax]]$tickformat <- ".0f"
+      }
+    }
+    g
+  }
+  
   reactivePlotMonths <- reactive({
     input$maxPlotYears * 12
   })
@@ -664,7 +689,9 @@ server <- function(input, output) {
       labs(title="Total Equity Over Time", x="Month", y="€", color="Option") +
       theme_minimal()
     
-    ggplotly(p) %>% layout(legend = list(x=1, y=1))
+    g <- ggplotly(p, tooltip = c("x","y")) %>% 
+      layout(legend = list(x=1, y=1))
+    no_decimal_plotly(g)
   })
   
   # 2) Principal & Interest Paid
@@ -701,7 +728,9 @@ server <- function(input, output) {
       labs(title="Cumulative Principal & Interest Paid", x="Month", y="€", color="Option") +
       theme_minimal()
     
-    ggplotly(p) %>% layout(legend = list(x=1, y=1))
+    g <- ggplotly(p, tooltip = c("x","y")) %>%
+      layout(legend = list(x=1, y=1))
+    no_decimal_plotly(g)
   })
   
   # 3) Property Value
@@ -719,7 +748,9 @@ server <- function(input, output) {
       labs(title="Property Value Growth", x="Month", y="€", color="Option") +
       theme_minimal()
     
-    ggplotly(p) %>% layout(legend = list(x=1, y=1))
+    g <- ggplotly(p, tooltip = c("x","y")) %>% 
+      layout(legend = list(x=1, y=1))
+    no_decimal_plotly(g)
   })
   
   # 4) Detailed Gains & Contributions
@@ -751,7 +782,213 @@ server <- function(input, output) {
            x="Month", y="€", color="Option") +
       theme_minimal()
     
-    ggplotly(p) %>% layout(legend=list(x=1,y=1))
+    g <- ggplotly(p, tooltip = c("x","y")) %>% 
+      layout(legend=list(x=1,y=1))
+    no_decimal_plotly(g)
+  })
+  
+  # --------------------------------------------
+  # Compare Mortgage Styles
+  # We'll forcibly simulate both styles for A & B, 
+  # and plot their cumulative principal vs interest on one plot (faceted),
+  # with custom colors/linetypes.
+  
+  compareDataA_Annuity <- reactive({
+    principalA <- input$full_priceA - input$down_paymentA
+    total_budgetA <- monthlyAllocA()$mortgage + monthlyAllocA()$invest
+    simulate_mortgage_and_investing(
+      principal             = principalA,
+      annual_mort_rate      = input$annual_mort_rate / 100,
+      total_monthly_budget  = total_budgetA,
+      years                 = totalTermYears,
+      annual_invest_return  = input$annual_invest_return / 100,
+      annual_property_growth= input$annual_property_growth / 100,
+      mortgage_style        = "annuity",
+      initial_property_value= input$full_priceA
+    )
+  })
+  compareDataA_Equal <- reactive({
+    principalA <- input$full_priceA - input$down_paymentA
+    total_budgetA <- monthlyAllocA()$mortgage + monthlyAllocA()$invest
+    simulate_mortgage_and_investing(
+      principal             = principalA,
+      annual_mort_rate      = input$annual_mort_rate / 100,
+      total_monthly_budget  = total_budgetA,
+      years                 = totalTermYears,
+      annual_invest_return  = input$annual_invest_return / 100,
+      annual_property_growth= input$annual_property_growth / 100,
+      mortgage_style        = "equal_principal",
+      initial_property_value= input$full_priceA
+    )
+  })
+  
+  compareDataB_Annuity <- reactive({
+    principalB <- input$full_priceB - input$down_paymentB
+    total_budgetB <- monthlyAllocB()$mortgage + monthlyAllocB()$invest
+    simulate_mortgage_and_investing(
+      principal             = principalB,
+      annual_mort_rate      = input$annual_mort_rate / 100,
+      total_monthly_budget  = total_budgetB,
+      years                 = totalTermYears,
+      annual_invest_return  = input$annual_invest_return / 100,
+      annual_property_growth= input$annual_property_growth / 100,
+      mortgage_style        = "annuity",
+      initial_property_value= input$full_priceB
+    )
+  })
+  compareDataB_Equal <- reactive({
+    principalB <- input$full_priceB - input$down_paymentB
+    total_budgetB <- monthlyAllocB()$mortgage + monthlyAllocB()$invest
+    simulate_mortgage_and_investing(
+      principal             = principalB,
+      annual_mort_rate      = input$annual_mort_rate / 100,
+      total_monthly_budget  = total_budgetB,
+      years                 = totalTermYears,
+      annual_invest_return  = input$annual_invest_return / 100,
+      annual_property_growth= input$annual_property_growth / 100,
+      mortgage_style        = "equal_principal",
+      initial_property_value= input$full_priceB
+    )
+  })
+  
+  # 1) Principal & Interest (absolute)
+  output$plotCompareMortgageStyles <- renderPlotly({
+    # Build data frames for each property + each style
+    dAann  <- compareDataA_Annuity()
+    dAeq   <- compareDataA_Equal()
+    dBann  <- compareDataB_Annuity()
+    dBeq   <- compareDataB_Equal()
+    
+    # Tag them
+    dAann$label <- "A-Annuity"
+    dAeq$label  <- "A-Equal"
+    dBann$label <- "B-Annuity"
+    dBeq$label  <- "B-Equal"
+    
+    # Build a single combined data
+    combined <- rbind(
+      data.frame(month = dAann$month, principal = dAann$total_principal_paid,
+                 interest = dAann$total_interest_paid, style = dAann$label),
+      data.frame(month = dAeq$month, principal = dAeq$total_principal_paid,
+                 interest = dAeq$total_interest_paid, style = dAeq$label),
+      data.frame(month = dBann$month, principal = dBann$total_principal_paid,
+                 interest = dBann$total_interest_paid, style = dBann$label),
+      data.frame(month = dBeq$month, principal = dBeq$total_principal_paid,
+                 interest = dBeq$total_interest_paid, style = dBeq$label)
+    )
+    
+    # Melt for faceting
+    dfLong <- melt(combined, id.vars=c("month","style"),
+                   variable.name="Metric", value.name="Value")
+    
+    # Manual color and linetype. We'll map:
+    #  "A-Annuity" -> Blue, solid
+    #  "A-Equal"   -> Blue, dashed
+    #  "B-Annuity" -> Red, solid
+    #  "B-Equal"   -> Red, dashed
+    color_values <- c("A-Annuity"="blue4", "A-Equal"="blue", 
+                      "B-Annuity"="red4",  "B-Equal"="red")
+    linetype_values <- c("A-Annuity"="solid","A-Equal"="dashed",
+                         "B-Annuity"="solid","B-Equal"="dashed")
+    
+    p <- ggplot(dfLong, aes(x=month, y=Value, color=style, linetype=style)) +
+      geom_line(size=1.2) +
+      facet_wrap(~Metric, scales="free_y",
+                 labeller = as_labeller(c(
+                   "principal" = "Total Principal Paid",
+                   "interest"  = "Total Interest Paid"
+                 ))) +
+      scale_x_continuous(limits = c(0, reactivePlotMonths())) +
+      scale_y_continuous(labels = function(x) paste0("€", comma(x))) +
+      scale_color_manual(values=color_values) +
+      scale_linetype_manual(values=linetype_values) +
+      labs(
+        title="Compare Mortgage Styles (Annuity vs. Equal Principal)",
+        x="Month", y="€", color="Property-Style", linetype="Property-Style"
+      ) +
+      theme_minimal()
+    
+    g <- ggplotly(p, tooltip=c("x","y")) %>%
+      layout(legend = list(x=1, y=1))
+    no_decimal_plotly(g)
+  })
+  
+  # 2) Percentage of Ownership & Interest (relative to principal)
+  output$plotCompareMortgageStylesPerc <- renderPlotly({
+    # We'll compute:
+    #   - % of Principal Paid = total_principal_paid / initial_principal * 100
+    #   - % of Interest vs. Principal = total_interest_paid / initial_principal * 100
+    
+    # Data A Annuity
+    dAann  <- compareDataA_Annuity()
+    principalA <- input$full_priceA - input$down_paymentA
+    dAann$pctPrincipal <- (dAann$total_principal_paid / principalA) * 100
+    dAann$pctInterest  <- (dAann$total_interest_paid  / principalA) * 100
+    dAann$label        <- "A-Annuity"
+    
+    # Data A Equal
+    dAeq   <- compareDataA_Equal()
+    dAeq$pctPrincipal <- (dAeq$total_principal_paid / principalA) * 100
+    dAeq$pctInterest  <- (dAeq$total_interest_paid  / principalA) * 100
+    dAeq$label        <- "A-Equal"
+    
+    # Data B Annuity
+    dBann  <- compareDataB_Annuity()
+    principalB <- input$full_priceB - input$down_paymentB
+    dBann$pctPrincipal <- (dBann$total_principal_paid / principalB) * 100
+    dBann$pctInterest  <- (dBann$total_interest_paid  / principalB) * 100
+    dBann$label        <- "B-Annuity"
+    
+    # Data B Equal
+    dBeq   <- compareDataB_Equal()
+    dBeq$pctPrincipal <- (dBeq$total_principal_paid / principalB) * 100
+    dBeq$pctInterest  <- (dBeq$total_interest_paid  / principalB) * 100
+    dBeq$label        <- "B-Equal"
+    
+    # Combine
+    combined <- rbind(
+      data.frame(month = dAann$month, pctPrincipal = dAann$pctPrincipal,
+                 pctInterest = dAann$pctInterest, style = dAann$label),
+      data.frame(month = dAeq$month, pctPrincipal = dAeq$pctPrincipal,
+                 pctInterest = dAeq$pctInterest, style = dAeq$label),
+      data.frame(month = dBann$month, pctPrincipal = dBann$pctPrincipal,
+                 pctInterest = dBann$pctInterest, style = dBann$label),
+      data.frame(month = dBeq$month, pctPrincipal = dBeq$pctPrincipal,
+                 pctInterest = dBeq$pctInterest, style = dBeq$label)
+    )
+    
+    # Melt
+    dfLong <- melt(combined, id.vars=c("month","style"),
+                   variable.name="Metric", value.name="Value")
+    
+    color_values <- c("A-Annuity"="blue4", "A-Equal"="blue", 
+                      "B-Annuity"="red4",  "B-Equal"="red")
+    linetype_values <- c("A-Annuity"="solid","A-Equal"="dashed",
+                         "B-Annuity"="solid","B-Equal"="dashed")
+    
+    p <- ggplot(dfLong, aes(x=month, y=Value, color=style, linetype=style)) +
+      geom_line(size=1.2) +
+      facet_wrap(~Metric, scales="free_y",
+                 labeller = as_labeller(c(
+                   "pctPrincipal" = "% of Principal Paid",
+                   "pctInterest"  = "% of Interest (Relative to Principal)"
+                 ))) +
+      scale_x_continuous(limits = c(0, reactivePlotMonths())) +
+      scale_y_continuous(labels=function(x) paste0(round(x,0),"%")) +
+      scale_color_manual(values=color_values) +
+      scale_linetype_manual(values=linetype_values) +
+      labs(
+        title="Ownership & Interest as % of Original Principal",
+        x="Month", y="%", color="Property-Style", linetype="Property-Style"
+      ) +
+      theme_minimal()
+    
+    g <- ggplotly(p, tooltip=c("x","y")) %>%
+      layout(legend = list(x=1, y=1))
+    
+    # We'll also remove decimals from axis if desired:
+    #   We'll just rely on the custom label above for the y-axis.
+    no_decimal_plotly(g)
   })
 }
 
