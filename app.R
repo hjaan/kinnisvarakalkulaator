@@ -687,7 +687,7 @@ server <- function(input, output) {
       scale_x_continuous(limits = c(0, reactivePlotMonths())) +
       scale_y_continuous(labels = function(x) paste0("€", comma(x))) +
       labs(title="Total Equity Over Time", x="Month", y="€", color="Option") +
-      theme_minimal()
+      theme_bw()
     
     g <- ggplotly(p, tooltip = c("x","y")) %>% 
       layout(legend = list(x=1, y=1))
@@ -726,7 +726,7 @@ server <- function(input, output) {
       scale_x_continuous(limits = c(0, reactivePlotMonths())) +
       scale_y_continuous(labels = function(x) paste0("€", comma(x))) +
       labs(title="Cumulative Principal & Interest Paid", x="Month", y="€", color="Option") +
-      theme_minimal()
+      theme_bw()
     
     g <- ggplotly(p, tooltip = c("x","y")) %>%
       layout(legend = list(x=1, y=1))
@@ -746,7 +746,7 @@ server <- function(input, output) {
       scale_x_continuous(limits = c(0, reactivePlotMonths())) +
       scale_y_continuous(labels=function(x) paste0("€", comma(x))) +
       labs(title="Property Value Growth", x="Month", y="€", color="Option") +
-      theme_minimal()
+      theme_bw()
     
     g <- ggplotly(p, tooltip = c("x","y")) %>% 
       layout(legend = list(x=1, y=1))
@@ -780,7 +780,7 @@ server <- function(input, output) {
       scale_y_continuous(labels=function(x) paste0("€", comma(x))) +
       labs(title="Detailed Gains & Contributions (All Options)",
            x="Month", y="€", color="Option") +
-      theme_minimal()
+      theme_bw()
     
     g <- ggplotly(p, tooltip = c("x","y")) %>% 
       layout(legend=list(x=1,y=1))
@@ -906,7 +906,7 @@ server <- function(input, output) {
         title="Compare Mortgage Styles (Annuity vs. Equal Principal)",
         x="Month", y="€", color="Property-Style", linetype="Property-Style"
       ) +
-      theme_minimal()
+      theme_bw()
     
     g <- ggplotly(p, tooltip=c("x","y")) %>%
       layout(legend = list(x=1, y=1))
@@ -981,7 +981,7 @@ server <- function(input, output) {
         title="Ownership & Interest as % of Original Principal",
         x="Month", y="%", color="Property-Style", linetype="Property-Style"
       ) +
-      theme_minimal()
+      theme_bw()
     
     g <- ggplotly(p, tooltip=c("x","y")) %>%
       layout(legend = list(x=1, y=1))
@@ -994,3 +994,4 @@ server <- function(input, output) {
 
 # Run the app
 shinyApp(ui = ui, server = server)
+
