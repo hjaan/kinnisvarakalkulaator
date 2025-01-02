@@ -1,222 +1,130 @@
-# Mortgage and Investment Simulation App
+# Mortgage and Investment Simulator
 
-This Shiny application simulates the financial outcomes of three scenarios:
+This project is a financial simulation tool built in **R** using the Shiny framework. It allows users to compare three options for managing finances over a 30-year period:
 
-- **Option A**: Buying a 3-room property.
-- **Option B**: Buying a 2-room property.
-- **Option C**: Renting and investing.
-
-The app calculates and visualizes the growth of investments, property values, mortgage balances, and total equity over time, enabling comparisons between options.
+1. **Option A**: Buy Property 1 (with a mortgage) and invest leftover funds.
+2. **Option B**: Buy Property 2 (with a mortgage) and invest leftover funds.
+3. **Option C**: Rent a property and invest leftover funds.
 
 ---
 
-## Key Concepts and Formulas
+## Features
 
-### Mortgage Payments
+- **Dynamic Simulations**:
+  - Mortgage payments (annuity or equal principal).
+  - Property appreciation.
+  - Investment growth (with customizable returns).
+  - Rent increases for renting scenarios.
 
-The app uses two types of mortgage payment styles:
+- **Customizable Inputs**:
+  - Income, expenses, mortgage rates, property growth rates, and investment returns.
+  - Options for property price, down payment, and mortgage type (annuity or equal principal).
 
-1. **Annuity Mortgage**: Equal monthly payments throughout the term.
-
-   **Formula**:
-
-   $$
-   M = P \times \frac{r}{1 - (1 + r)^{-n}}
-   $$
-
-   **Where**:
-   - \( M \): Monthly payment.
-   - \( P \): Principal (loan amount).
-   - \( r \): Monthly interest rate (\( \text{annual rate} / 12 \)).
-   - \( n \): Total number of payments (\( \text{years} \times 12 \)).
-
-2. **Equal Principal Payment**: Fixed principal payment + decreasing interest.
-
-   - **Principal Payment**:  
-     $$
-     \text{Principal Payment} = \frac{P}{n}
-     $$
-
-   - **Monthly Payment**:  
-     $$
-     \text{Monthly Payment} = \text{Principal Payment} + (\text{Current Principal} \times r)
-     $$
-
-These formulas ensure accurate modeling of mortgage payments over time, accounting for varying interest and principal proportions.
-
----
-
-### Investment Growth
-
-Investments grow monthly, compounding with the assumed annual return rate:
-
-$$
-I_{\text{next}} = I_{\text{current}} \times (1 + r_i) + \text{monthly contribution}
-$$
-
-**Where**:
-- \( r_i \): Monthly investment return (\( \text{annual rate} / 12 \)).
-
-Cumulative contributions and investment gains are tracked separately to distinguish between principal contributions and the growth due to compounding.
-
----
-
-### Property Value Growth
-
-Properties appreciate over time using the annual growth rate:
-
-$$
-V_{\text{next}} = V_{\text{current}} \times (1 + r_p)
-$$
-
-**Where**:
-- \( r_p \): Monthly property growth rate (\( \text{annual growth rate} / 12 \)).
-
----
-
-### Total Equity
-
-Equity is the sum of:
-
-1. **Real Estate Equity**:  
-   $$
-   \text{Real Estate Equity} = \text{Property Value} - \text{Principal Owed}
-   $$
-
-2. **Investment Balance**:  
-   $$
-   \text{Investment Balance} = \text{Investment Contributions} + \text{Investment Gains}
-   $$
-
----
-
-## App Features
-
-### UI (User Interface)
-
-- **Input Parameters**:
-  - Interest rates, property growth rates, and investment returns.
-  - Property prices, down payments, and investable income for each option.
-  - Mortgage term and analysis intervals for equity comparisons.
-  
 - **Outputs**:
-  - **Equity Table**: Tabular comparison of equity at selected intervals.
-  - **Plots**:
-    - Investment Balances.
-    - Mortgage Principal Owed.
-    - Property Value Growth.
-    - Monthly Cash Flows.
-    - Detailed Gains & Contributions.
+  - Equity table summarizing key metrics (e.g., total equity, property value, investment gains).
+  - Interactive plots for:
+    - Total equity over time.
+    - Cumulative principal and interest paid.
+    - Property value growth.
+    - Investment and property gains.
 
 ---
 
-### Server-Side Logic
+## Formulas Used
 
-#### Simulations
+### 1. Monthly Interest Rate
 
-1. **Buying Options (A & B)**:
-   - Simulates the mortgage payments and investments made with leftover income.
-   - Tracks monthly:
-     - Mortgage payments (principal + interest).
-     - Investment balances (cumulative contributions and gains).
-     - Property values (with appreciation).
-     - Real estate equity (\( \text{Property Value} - \text{Principal Owed} \)).
-  
-2. **Renting & Investing (Option C)**:
-   - Models direct investments with the provided monthly contribution.
-   - Tracks:
-     - Investment balances.
-     - Gains and contributions.
+$$
+r = \frac{\text{Annual Rate}}{12}
+$$
 
----
+### 2. Monthly Mortgage Payment (Annuity)
 
-#### Reactive Outputs
+$$ 
+M = P \times \frac{r}{1 - (1 + r)^{-n}} 
+$$
 
-- **Equity Table**:
-  - Compares the total equity for all options at specified intervals.
-  - Separates real estate equity, investment balances, and total gains.
-  
-- **Plots**:
-  - Visualize cash flow, balances, property values, and detailed gains over time.
+**Where:**
+- \( M \): Monthly payment  
+- \( P \): Principal (loan amount)  
+- \( r \): Monthly interest rate  
+- \( n \): Total number of payments (\( \text{years} \times 12 \))
 
 ---
 
-## Visualization
+### 3. Investment Growth
 
-Plots leverage **ggplot2** to create clean, visually appealing representations of data:
+$$ 
+Investment Balance_m = Investment Balance_{m-1} * (1 + r) + Monthly Contribution
+$$
 
-- **Line Charts** for continuous growth (e.g., investments, property value).
-- **Faceted Charts** to show multiple metrics in a single view (e.g., gains, contributions).
+**Where:**
+ - \( Investment Balance_m \):  Investment balance at month m
+ - \( r \):  Monthly investment return rate
+ - \( Monthly Contribution \):  Amount added to the investment each month
+---
+
+
+### 4. Property Appreciation
+
+$$ 
+Property Value_m = Property Value_{m-1} * (1 + r)
+$$
+
+**Where:**
+ - \( Property Value_m \):  Property value at month m
+ - \( r \):  Monthly property appreciation rate
+
+
+## Code Structure
+
+### **1. Helper Functions**
+- **`monthly_interest_rate`**: Converts annual rates to monthly rates.
+- **`annuity_monthly_payment`**: Calculates monthly payments for annuity-style mortgages.
+- **`simulate_mortgage_and_investing`**: Simulates financial metrics for buying a property and investing.
+- **`simulate_renting_and_investing`**: Simulates financial metrics for renting and investing.
+
+### **2. User Interface (UI)**
+- Sidebar for input parameters:
+  - Monthly income, expenses, mortgage rates, and terms.
+  - Property-specific parameters (price, down payment, mortgage type).
+  - Rent-specific parameters (initial rent, annual rent increases).
+- Main panel displays:
+  - Equity table (summarized at intervals).
+  - Plots for equity, property value, and detailed gains.
+
+### **3. Server Logic**
+- **Reactive Values**:
+  - `common_pool`: Monthly available budget.
+  - Option-specific calculations for mortgage payments, rent, and investments.
+- **Simulations**:
+  - Uses helper functions to generate financial data for all options.
+- **Output Rendering**:
+  - Equity table and plots (using `ggplot2` and `plotly`).
 
 ---
 
-## Assumptions
+## Example Interactive Features
 
-- Constant annual rates for mortgage, investment, and property growth.
-- Down payments and contributions are fixed at the start.
-- No tax, fees, or transaction costs considered.
-
----
-
-## Code Design
-
-- **Modular Functions**: Helper functions for recurring calculations (e.g., annuity payments, monthly interest).
-- **Reactivity**: Allows real-time updates as inputs change.
-- **Error Handling**: Alerts for invalid inputs (e.g., down payments exceeding property price).
+1. Adjust the **annual mortgage rate** to see its impact on monthly payments and equity growth.
+2. Compare total equity after 30 years for buying vs. renting under different **investment return rates**.
+3. Explore how **annual property growth rates** affect long-term equity in Options A and B.
 
 ---
 
-## How to Use
-
-1. Input the financial parameters and assumptions.
-2. Adjust the sliders for mortgage term and analysis intervals.
-3. View and compare results in tables and plots.
-
-This tool enables users to make informed financial decisions about buying or renting.
+## Plots Included
+1. **Total Equity Over Time**: Shows combined equity from property and investments.
+2. **Principal & Interest Paid**: Tracks cumulative amounts paid toward the mortgage.
+3. **Property Value Growth**: Visualizes the appreciation of properties.
+4. **Detailed Gains & Contributions**: Breaks down contributions, gains, and equity components.
 
 ---
 
-## Future Enhancements
-
-- Include fees, taxes, and insurance for realistic modeling.
-- Add sensitivity analysis for variable interest or growth rates.
-- Integrate downloadable reports for the results.
-
----
-
-### Example Screenshot
-
-*(Include a screenshot of your Shiny app here if possible)*
+## How to Run
+1. Install required libraries: `shiny`, `ggplot2`, `reshape2`, `scales`, `plotly`.
+2. Save the script as `app.R`.
+3. Run `shiny::runApp("app.R")` in RStudio or R.
 
 ---
 
-### Installation
-
-To run this Shiny app locally:
-
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/yourusername/mortgage-investment-simulation.git
-   ```
-2. **Navigate to the Directory**:
-   ```bash
-   cd mortgage-investment-simulation
-   ```
-3. **Install Required Packages**:
-   ```R
-   install.packages(c("shiny", "ggplot2", "dplyr"))
-   ```
-4. **Run the App**:
-   ```R
-   shiny::runApp()
-   ```
-
----
-
-### License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-Feel free to customize this documentation further to fit your repository's structure and any additional details you might want to include!
+This project provides a clear, interactive way to evaluate financial decisions for buying, renting, or investing. Adjust inputs, compare options, and visualize long-term impacts in real-time!
