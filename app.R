@@ -1,6 +1,3 @@
-# --------------------------------------------
-# GLOBALS & LIBRARIES
-# --------------------------------------------
 library(shiny)
 library(ggplot2)
 library(reshape2)
@@ -151,7 +148,8 @@ simulate_renting_and_investing <- function(
     initial_rent = 800,
     annual_rent_increase = 0.02,
     annual_invest_return = 0.05,
-    years = 30
+    years = 30,
+    start_invest = 0
 ) {
   months <- years * 12
   r_i <- annual_invest_return / 12
@@ -163,8 +161,8 @@ simulate_renting_and_investing <- function(
   monthly_rent      <- numeric(months)
   monthly_invested  <- numeric(months)
   
-  balance       <- 0
-  cum_invested  <- 0
+  balance       <- start_invest
+  cum_invested  <- start_invest
   
   for (m in month_vec) {
     # Which 'year' are we in?
@@ -219,73 +217,97 @@ ui <- fluidPage(
   
   sidebarLayout(
     sidebarPanel(
-      h3("Simulation Parameters"),
-      
+      # ---------------------------
+      # GENERAL PARAMETERS
+      # ---------------------------
+      h3("General Parameters"),
       numericInput("monthly_income", "Monthly Income (€):", 
                    value = 2800, min = 0, step = 100),
       helpText("Enter your total monthly income."),
       
       numericInput("monthly_expenses", "Monthly Expenses (€):", 
                    value = 670, min = 0, step = 50),
-      helpText("Enter your total monthly expenses (excluding mortgage/invest)."),
-      
-      hr(),
+      helpText("Enter your total monthly expenses (excluding mortgage/rent/invest). This is general estimation for food, fun, utilities"),
       
       numericInput("annual_mort_rate", "Annual Mortgage Rate (%):", 
-                   value = 2, min = 0, step = 0.1),
-      helpText("Annual interest rate for mortgage."),
+                   value = 3.5, min = 0, step = 0.1),
+      helpText("Over a long horizon, many models might assume ~3%-4% for planning purposes."),
+      
       
       numericInput("annual_invest_return", "Annual Investment Return (%):", 
-                   value = 8, min = 0, step = 0.1),
-      helpText("Expected annual return rate for investments."),
+                   value = 9, min = 0, step = 0.1),
+      helpText("In a long-term model, you might assume an 8%-10% nominal return for broad U.S. equities. More conservative planners might model nearer to 7%."),
+      
       
       numericInput("annual_property_growth", "Annual Property Growth (%):", 
-                   value = 7, min = 0, step = 0.1),
-      helpText("Expected annual growth rate for property value."),
+                   value = 5, min = 0, step = 0.1),
+      helpText("In Estonia historically, estimates often hover around 4%-6% nominal annual growth over the long run."),
       
       helpText("Mortgage term is fixed at 30 years."),
       
-      hr(),
       
-      h4("Option A (Property 1) Calculated Allocations"),
-      textOutput("optionA_mortgagePayment"),
-      textOutput("optionA_investment"),
-      
-      hr(),
-      h4("Option B (Property 2) Calculated Allocations"),
-      textOutput("optionB_mortgagePayment"),
-      textOutput("optionB_investment"),
-      
-      hr(),
-      h4("Option C (Rent & Invest) Calculated Allocations"),
-      textOutput("optionC_rentPayment"),
-      textOutput("optionC_investment"),
-      
-      hr(),
       sliderInput("interval_years", "Analysis Interval (Years):", 
-                  min = 1, max = 30, value = 5, step = 1),
+                  min = 1, max = 30, value = 1, step = 1),
       
       sliderInput("maxPlotYears", "Show up to Year:", 
                   min = 1, max = 30, value = 10, step = 1),
       
+      # ---------------------------
+      # CALCULATED OUTPUTS (A, B, C)
+      # ---------------------------
       hr(),
-      h4("Option A: Property 1"),
+      h4("Property 1 Calculated Allocations"),
+      textOutput("optionA_mortgagePayment"),
+      textOutput("optionA_investment"),
+      
+      hr(),
+      h4("Property 2 Calculated Allocations"),
+      textOutput("optionB_mortgagePayment"),
+      textOutput("optionB_investment"),
+      
+      hr(),
+      h4("Rent & Invest Calculated Allocations"),
+      textOutput("optionC_rentPayment"),
+      textOutput("optionC_investment"),
+      
+      # ---------------------------
+      # PROPERTY / RENTING OPTIONS (A, B, C)
+      # ---------------------------
+      hr(),
+      
+      # 1) Option A Inputs
+      h3("Property 1"),
+      textInput("labelA", "Label A:", value = "A"),
       numericInput("full_priceA", "Full Price (€):", value = 200000, min = 0, step = 1000),
       numericInput("down_paymentA", "Down Payment (€):", value = 20000, min = 0, step = 1000),
       selectInput("mortgage_styleA", "Mortgage Style:",
                   choices = c("Annuity" = "annuity", "Equal Principal" = "equal_principal"), 
                   selected = "annuity"),
       
+      # For demonstration, set default to maximum leftover = 2800 - 670 = 2130 
+      # but keep the max slider at 5000
+      sliderInput("investA", "Monthly Investment for A:", 
+                  min = 0, max = 5000, value = 2130, step = 50),
+      
       hr(),
-      h4("Option B: Property 2"),
-      numericInput("full_priceB", "Full Price (€):", value = 150000, min = 0, step = 1000),
-      numericInput("down_paymentB", "Down Payment (€):", value = 15000, min = 0, step = 1000),
+      
+      # 2) Option B Inputs
+      h3("Property 2"),
+      textInput("labelB", "Label B:", value = "B"),
+      numericInput("full_priceB", "Full Price (€):", value = 120000, min = 0, step = 1000),
+      numericInput("down_paymentB", "Down Payment (€):", value = 12000, min = 0, step = 1000),
       selectInput("mortgage_styleB", "Mortgage Style:",
                   choices = c("Annuity" = "annuity", "Equal Principal" = "equal_principal"), 
                   selected = "annuity"),
       
+      sliderInput("investB", "Monthly Investment for B:", 
+                  min = 0, max = 5000, value = 2130, step = 50),
+      
       hr(),
-      h4("Option C: Rent & Invest"),
+      
+      # 3) Option C Inputs
+      h3("Rent & Invest"),
+      textInput("labelC", "Label C:", value = "Rent & Invest"),
       numericInput("start_investC", "Initial Investment (€):", 
                    value = 20000, min = 0, step = 1000),
       numericInput("initial_rentC", "Initial Monthly Rent (€):", 
@@ -293,8 +315,8 @@ ui <- fluidPage(
       numericInput("annual_rent_increaseC", "Annual Rent Increase (%):", 
                    value = 0, min = 0, step = 0.1),
       
-      hr(),
-      helpText("Use 'Show up to Year' to limit table/plot range.")
+      sliderInput("investC", "Monthly Investment for C:", 
+                  min = 0, max = 5000, value = 2130, step = 50)
     ),
     
     mainPanel(
@@ -375,11 +397,11 @@ ui <- fluidPage(
 # --------------------------------------------
 # SERVER
 # --------------------------------------------
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   totalTermYears <- 30
   
-  # Pool: (income - expenses)
+  # Pool: (income - expenses) - this is the total leftover for mortgage+invest or rent+invest
   common_pool <- reactive({
     pool <- input$monthly_income - input$monthly_expenses
     if (pool < 0) {
@@ -389,13 +411,13 @@ server <- function(input, output) {
     pool
   })
   
-  # --------------------------
+  # -------------------------------------------------------------------
   # Option A: Mortgage Payment + Investment
-  # --------------------------
+  # -------------------------------------------------------------------
   monthlyAllocA <- reactive({
     principalA <- input$full_priceA - input$down_paymentA
     validate(
-      need(principalA >= 0, "Down Payment for Option A cannot exceed Full Price.")
+      need(principalA >= 0, "Down Payment for Property 1 cannot exceed Full Price.")
     )
     
     # Calculate required mortgage payment
@@ -409,13 +431,32 @@ server <- function(input, output) {
         (principalA * (input$annual_mort_rate / 100) / 12)
     }
     
-    invests <- common_pool() - required_mort_payment
-    if (invests < 0) {
-      showNotification("Option A mortgage payment exceeds your available pool. Setting investment to 0.", type="warning")
-      invests <- 0
+    leftoverA <- common_pool() - required_mort_payment
+    
+    if (leftoverA < 0) {
+      # Mortgage payment alone exceeds your monthly pool => zero invest
+      showNotification("Property 1 mortgage payment exceeds your available pool. Setting investment to 0.", 
+                       type="warning")
+      investsA <- 0
+    } else {
+      # user-chosen invests from slider
+      investsA <- input$investA
+      # do not exceed leftover
+      investsA <- min(investsA, leftoverA)
+      if (investsA < 0) investsA <- 0
     }
     
-    list(mortgage = required_mort_payment, invest = invests)
+    list(mortgage = required_mort_payment, invest = investsA, leftover = leftoverA)
+  })
+  
+  # Observe leftoverA and update the slider max
+  observe({
+    allocA <- monthlyAllocA()
+    leftoverA <- allocA$leftover
+    maxInvestA <- floor(leftoverA)
+    updateSliderInput(session, "investA",
+                      max = max(maxInvestA, 0),
+                      value = min(input$investA, max(maxInvestA,0)))
   })
   
   output$optionA_mortgagePayment <- renderText({
@@ -444,13 +485,13 @@ server <- function(input, output) {
     )
   })
   
-  # --------------------------
+  # -------------------------------------------------------------------
   # Option B: Mortgage Payment + Investment
-  # --------------------------
+  # -------------------------------------------------------------------
   monthlyAllocB <- reactive({
     principalB <- input$full_priceB - input$down_paymentB
     validate(
-      need(principalB >= 0, "Down Payment for Option B cannot exceed Full Price.")
+      need(principalB >= 0, "Down Payment for Property 2 cannot exceed Full Price.")
     )
     
     if (input$mortgage_styleB == "annuity") {
@@ -462,13 +503,29 @@ server <- function(input, output) {
         (principalB * (input$annual_mort_rate / 100) / 12)
     }
     
-    invests <- common_pool() - required_mort_payment
-    if (invests < 0) {
-      showNotification("Option B mortgage payment exceeds your available pool. Setting investment to 0.", type="warning")
-      invests <- 0
+    leftoverB <- common_pool() - required_mort_payment
+    
+    if (leftoverB < 0) {
+      showNotification("Property 2 mortgage payment exceeds your available pool. Setting investment to 0.", 
+                       type="warning")
+      investsB <- 0
+    } else {
+      investsB <- input$investB
+      investsB <- min(investsB, leftoverB)
+      if (investsB < 0) investsB <- 0
     }
     
-    list(mortgage = required_mort_payment, invest = invests)
+    list(mortgage = required_mort_payment, invest = investsB, leftover = leftoverB)
+  })
+  
+  # Observe leftoverB and update the slider max
+  observe({
+    allocB <- monthlyAllocB()
+    leftoverB <- allocB$leftover
+    maxInvestB <- floor(leftoverB)
+    updateSliderInput(session, "investB",
+                      max = max(maxInvestB, 0),
+                      value = min(input$investB, max(maxInvestB,0)))
   })
   
   output$optionB_mortgagePayment <- renderText({
@@ -497,17 +554,34 @@ server <- function(input, output) {
     )
   })
   
-  # --------------------------
-  # Option C: Rent & Invest
-  # --------------------------
+  # -------------------------------------------------------------------
+  # Option C: Rent + Invest
+  # -------------------------------------------------------------------
   monthlyAllocC <- reactive({
     rent_first_month <- input$initial_rentC
-    invests <- common_pool() - rent_first_month
-    if (invests < 0) {
-      showNotification("Option C rent exceeds your available pool. Setting investment to 0.", type="warning")
-      invests <- 0
+    leftoverC <- common_pool() - rent_first_month
+    
+    if (leftoverC < 0) {
+      showNotification("Rent for Option C exceeds your available pool. Setting investment to 0.", 
+                       type="warning")
+      investsC <- 0
+    } else {
+      investsC <- input$investC
+      investsC <- min(investsC, leftoverC)
+      if (investsC < 0) investsC <- 0
     }
-    list(rent = rent_first_month, invest = invests)
+    
+    list(rent = rent_first_month, invest = investsC, leftover = leftoverC)
+  })
+  
+  # Observe leftoverC and update the slider max
+  observe({
+    allocC <- monthlyAllocC()
+    leftoverC <- allocC$leftover
+    maxInvestC <- floor(leftoverC)
+    updateSliderInput(session, "investC",
+                      max = max(maxInvestC, 0),
+                      value = min(input$investC, max(maxInvestC,0)))
   })
   
   output$optionC_rentPayment <- renderText({
@@ -529,14 +603,14 @@ server <- function(input, output) {
       initial_rent         = input$initial_rentC,
       annual_rent_increase = input$annual_rent_increaseC / 100,
       annual_invest_return = input$annual_invest_return / 100,
-      years               = totalTermYears
+      years               = totalTermYears,
+      start_invest        = input$start_investC
     )
   })
   
-  # --------------------------------------------
+  # -------------------------------------------------------------------
   # Equity Table
-  # --------------------------------------------
-  # Modified to include RealEstateEquity & PctOwned
+  # -------------------------------------------------------------------
   equity_at_year <- function(data_dict, year) {
     m <- year * 12
     if (m > nrow(data_dict)) m <- nrow(data_dict)
@@ -579,61 +653,60 @@ server <- function(input, output) {
     
     # Fill columns for A
     for (i in seq_along(yrs_vector)) {
-      dfOut$PropertyValueA[i]      <- get_val(eqA[[i]], "PropertyValue")
-      dfOut$PropertyAppA[i]        <- get_val(eqA[[i]], "PropertyApp")
-      dfOut$TotalPrincipalPaidA[i] <- get_val(eqA[[i]], "TotalPrincipalPaid")
+      dfOut[[paste0("PropertyValue_", input$labelA)]][i]      <- get_val(eqA[[i]], "PropertyValue")
+      dfOut[[paste0("PropertyApp_", input$labelA)]][i]        <- get_val(eqA[[i]], "PropertyApp")
+      dfOut[[paste0("TotalPrincipalPaid_", input$labelA)]][i] <- get_val(eqA[[i]], "TotalPrincipalPaid")
       
-      # % Owned A
       propValA <- get_val(eqA[[i]], "PropertyValue")
       eqValA   <- get_val(eqA[[i]], "RealEstateEquity")
       pctA <- if (propValA > 0) (eqValA / propValA * 100) else 0
-      dfOut$PctOwnedA[i]           <- pctA
+      dfOut[[paste0("PctOwned_", input$labelA)]][i]           <- pctA
       
-      dfOut$TotalInterestPaidA[i]  <- get_val(eqA[[i]], "TotalInterestPaid")
-      dfOut$InvContribA[i]         <- get_val(eqA[[i]], "InvContrib")
-      dfOut$InvGainsA[i]           <- get_val(eqA[[i]], "InvGains")
-      dfOut$InvBalanceA[i]         <- get_val(eqA[[i]], "InvBalance")
-      dfOut$TotalEquityA[i]        <- get_val(eqA[[i]], "TotalEquity")
+      dfOut[[paste0("TotalInterestPaid_", input$labelA)]][i]  <- get_val(eqA[[i]], "TotalInterestPaid")
+      dfOut[[paste0("InvContrib_", input$labelA)]][i]         <- get_val(eqA[[i]], "InvContrib")
+      dfOut[[paste0("InvGains_", input$labelA)]][i]           <- get_val(eqA[[i]], "InvGains")
+      dfOut[[paste0("InvBalance_", input$labelA)]][i]         <- get_val(eqA[[i]], "InvBalance")
+      dfOut[[paste0("TotalEquity_", input$labelA)]][i]        <- get_val(eqA[[i]], "TotalEquity")
     }
     
     # Fill columns for B
     for (i in seq_along(yrs_vector)) {
-      dfOut$PropertyValueB[i]      <- get_val(eqB[[i]], "PropertyValue")
-      dfOut$PropertyAppB[i]        <- get_val(eqB[[i]], "PropertyApp")
-      dfOut$TotalPrincipalPaidB[i] <- get_val(eqB[[i]], "TotalPrincipalPaid")
+      dfOut[[paste0("PropertyValue_", input$labelB)]][i]      <- get_val(eqB[[i]], "PropertyValue")
+      dfOut[[paste0("PropertyApp_", input$labelB)]][i]        <- get_val(eqB[[i]], "PropertyApp")
+      dfOut[[paste0("TotalPrincipalPaid_", input$labelB)]][i] <- get_val(eqB[[i]], "TotalPrincipalPaid")
       
       propValB <- get_val(eqB[[i]], "PropertyValue")
       eqValB   <- get_val(eqB[[i]], "RealEstateEquity")
       pctB <- if (propValB > 0) (eqValB / propValB * 100) else 0
-      dfOut$PctOwnedB[i]           <- pctB
+      dfOut[[paste0("PctOwned_", input$labelB)]][i]           <- pctB
       
-      dfOut$TotalInterestPaidB[i]  <- get_val(eqB[[i]], "TotalInterestPaid")
-      dfOut$InvContribB[i]         <- get_val(eqB[[i]], "InvContrib")
-      dfOut$InvGainsB[i]           <- get_val(eqB[[i]], "InvGains")
-      dfOut$InvBalanceB[i]         <- get_val(eqB[[i]], "InvBalance")
-      dfOut$TotalEquityB[i]        <- get_val(eqB[[i]], "TotalEquity")
+      dfOut[[paste0("TotalInterestPaid_", input$labelB)]][i]  <- get_val(eqB[[i]], "TotalInterestPaid")
+      dfOut[[paste0("InvContrib_", input$labelB)]][i]         <- get_val(eqB[[i]], "InvContrib")
+      dfOut[[paste0("InvGains_", input$labelB)]][i]           <- get_val(eqB[[i]], "InvGains")
+      dfOut[[paste0("InvBalance_", input$labelB)]][i]         <- get_val(eqB[[i]], "InvBalance")
+      dfOut[[paste0("TotalEquity_", input$labelB)]][i]        <- get_val(eqB[[i]], "TotalEquity")
     }
     
     # Fill columns for C
     for (i in seq_along(yrs_vector)) {
-      dfOut$PropertyValueC[i]      <- get_val(eqC[[i]], "PropertyValue")
-      dfOut$PropertyAppC[i]        <- get_val(eqC[[i]], "PropertyApp")
-      dfOut$TotalPrincipalPaidC[i] <- get_val(eqC[[i]], "TotalPrincipalPaid")
+      dfOut[[paste0("PropertyValue_", input$labelC)]][i]      <- get_val(eqC[[i]], "PropertyValue")
+      dfOut[[paste0("PropertyApp_", input$labelC)]][i]        <- get_val(eqC[[i]], "PropertyApp")
+      dfOut[[paste0("TotalPrincipalPaid_", input$labelC)]][i] <- get_val(eqC[[i]], "TotalPrincipalPaid")
       
       # For renting, we have 0 or NA for equity, so 0% owned
-      dfOut$PctOwnedC[i]           <- 0
+      dfOut[[paste0("PctOwned_", input$labelC)]][i]           <- 0
       
-      dfOut$TotalInterestPaidC[i]  <- get_val(eqC[[i]], "TotalInterestPaid")
-      dfOut$InvContribC[i]         <- get_val(eqC[[i]], "InvContrib")
-      dfOut$InvGainsC[i]           <- get_val(eqC[[i]], "InvGains")
-      dfOut$InvBalanceC[i]         <- get_val(eqC[[i]], "InvBalance")
-      dfOut$TotalEquityC[i]        <- get_val(eqC[[i]], "TotalEquity")
+      dfOut[[paste0("TotalInterestPaid_", input$labelC)]][i]  <- get_val(eqC[[i]], "TotalInterestPaid")
+      dfOut[[paste0("InvContrib_", input$labelC)]][i]         <- get_val(eqC[[i]], "InvContrib")
+      dfOut[[paste0("InvGains_", input$labelC)]][i]           <- get_val(eqC[[i]], "InvGains")
+      dfOut[[paste0("InvBalance_", input$labelC)]][i]         <- get_val(eqC[[i]], "InvBalance")
+      dfOut[[paste0("TotalEquity_", input$labelC)]][i]        <- get_val(eqC[[i]], "TotalEquity")
     }
     
     # Convert Year to integer
     dfOut$Year <- as.integer(dfOut$Year)
     
-    # Format numeric columns (remove decimals)
+    # Format numeric columns (remove decimals, add thousand separators)
     numeric_cols <- setdiff(colnames(dfOut), "Year")
     for (col in numeric_cols) {
       dfOut[[col]] <- formatC(dfOut[[col]], format="f", big.mark=" ", digits=0)
@@ -653,8 +726,8 @@ server <- function(input, output) {
   )
   
   # --------------------------------------------
-  # PLOTS
-  # A small helper to fix Plotly hover to no decimals:
+  # Helper to remove decimals in Plotly hover axes
+  # --------------------------------------------
   no_decimal_plotly <- function(g) {
     # Attempt to set all y-axes to .0f
     for(i in 1:6) {
@@ -670,15 +743,17 @@ server <- function(input, output) {
     input$maxPlotYears * 12
   })
   
+  # --------------------------------------------
   # 1) Total Equity Over Time
+  # --------------------------------------------
   output$plotInvestmentBalances <- renderPlotly({
     dfA <- dataA()
     dfB <- dataB()
     dfC <- dataC()
     
-    dA <- data.frame(month = dfA$month, value = dfA$total_equity, option="Option A")
-    dB <- data.frame(month = dfB$month, value = dfB$total_equity, option="Option B")
-    dC <- data.frame(month = dfC$month, value = dfC$total_equity, option="Option C")
+    dA <- data.frame(month = dfA$month, value = dfA$total_equity, option = input$labelA)
+    dB <- data.frame(month = dfB$month, value = dfB$total_equity, option = input$labelB)
+    dC <- data.frame(month = dfC$month, value = dfC$total_equity, option = input$labelC)
     
     df <- rbind(dA, dB, dC)
     
@@ -694,7 +769,9 @@ server <- function(input, output) {
     no_decimal_plotly(g)
   })
   
+  # --------------------------------------------
   # 2) Principal & Interest Paid
+  # --------------------------------------------
   output$plotPrincipalOwed <- renderPlotly({
     dfA <- dataA()
     dfB <- dataB()
@@ -703,13 +780,13 @@ server <- function(input, output) {
       month = dfA$month,
       totalInterestPaid = dfA$total_interest_paid,
       totalPrincipalPaid= dfA$total_principal_paid,
-      option = "Option A"
+      option = input$labelA
     )
     dB <- data.frame(
       month = dfB$month,
       totalInterestPaid = dfB$total_interest_paid,
       totalPrincipalPaid= dfB$total_principal_paid,
-      option = "Option B"
+      option = input$labelB
     )
     dAll <- rbind(dA, dB)
     
@@ -733,11 +810,13 @@ server <- function(input, output) {
     no_decimal_plotly(g)
   })
   
+  # --------------------------------------------
   # 3) Property Value
+  # --------------------------------------------
   output$plotPropertyValue <- renderPlotly({
     dfA <- dataA(); dfB <- dataB()
-    dA <- data.frame(month=dfA$month, value=dfA$property_value, option="Option A")
-    dB <- data.frame(month=dfB$month, value=dfB$property_value, option="Option B")
+    dA <- data.frame(month=dfA$month, value=dfA$property_value, option=input$labelA)
+    dB <- data.frame(month=dfB$month, value=dfB$property_value, option=input$labelB)
     
     df <- rbind(dA, dB)
     
@@ -753,11 +832,13 @@ server <- function(input, output) {
     no_decimal_plotly(g)
   })
   
+  # --------------------------------------------
   # 4) Detailed Gains & Contributions
+  # --------------------------------------------
   output$plotAllDetailedGains <- renderPlotly({
-    dfA <- dataA(); dfA$Option <- "Option A"
-    dfB <- dataB(); dfB$Option <- "Option B"
-    dfC <- dataC(); dfC$Option <- "Option C"
+    dfA <- dataA(); dfA$Option <- input$labelA
+    dfB <- dataB(); dfB$Option <- input$labelB
+    dfC <- dataC(); dfC$Option <- input$labelC
     
     dfAll <- rbind(
       dfA[, c("month","Option","inv_contrib","inv_gains","property_app","real_estate_equity")],
@@ -789,12 +870,14 @@ server <- function(input, output) {
   
   # --------------------------------------------
   # Compare Mortgage Styles
+  # --------------------------------------------
   # We'll forcibly simulate both styles for A & B, 
-  # and plot their cumulative principal vs interest on one plot (faceted),
-  # with custom colors/linetypes.
+  # and plot their cumulative principal vs interest on one plot (faceted).
   
+  # Data for comparison: A
   compareDataA_Annuity <- reactive({
     principalA <- input$full_priceA - input$down_paymentA
+    # We'll reuse the final 'budget' that user actually invests for A.
     total_budgetA <- monthlyAllocA()$mortgage + monthlyAllocA()$invest
     simulate_mortgage_and_investing(
       principal             = principalA,
@@ -822,6 +905,7 @@ server <- function(input, output) {
     )
   })
   
+  # Data for comparison: B
   compareDataB_Annuity <- reactive({
     principalB <- input$full_priceB - input$down_paymentB
     total_budgetB <- monthlyAllocB()$mortgage + monthlyAllocB()$invest
@@ -860,10 +944,10 @@ server <- function(input, output) {
     dBeq   <- compareDataB_Equal()
     
     # Tag them
-    dAann$label <- "A-Annuity"
-    dAeq$label  <- "A-Equal"
-    dBann$label <- "B-Annuity"
-    dBeq$label  <- "B-Equal"
+    dAann$label <- paste0(input$labelA, "-Annuity")
+    dAeq$label  <- paste0(input$labelA, "-Equal")
+    dBann$label <- paste0(input$labelB, "-Annuity")
+    dBeq$label  <- paste0(input$labelB, "-Equal")
     
     # Build a single combined data
     combined <- rbind(
@@ -881,15 +965,25 @@ server <- function(input, output) {
     dfLong <- melt(combined, id.vars=c("month","style"),
                    variable.name="Metric", value.name="Value")
     
-    # Manual color and linetype. We'll map:
-    #  "A-Annuity" -> Blue, solid
-    #  "A-Equal"   -> Blue, dashed
-    #  "B-Annuity" -> Red, solid
-    #  "B-Equal"   -> Red, dashed
-    color_values <- c("A-Annuity"="blue4", "A-Equal"="blue", 
-                      "B-Annuity"="red4",  "B-Equal"="red")
-    linetype_values <- c("A-Annuity"="solid","A-Equal"="dashed",
-                         "B-Annuity"="solid","B-Equal"="dashed")
+    # Manual color and linetype:
+    color_values <- setNames(
+      c("blue4", "blue", "red4", "red"),
+      c(
+        paste0(input$labelA, "-Annuity"),
+        paste0(input$labelA, "-Equal"),
+        paste0(input$labelB, "-Annuity"),
+        paste0(input$labelB, "-Equal")
+      )
+    )
+    linetype_values <- setNames(
+      c("solid", "dashed", "solid", "dashed"),
+      c(
+        paste0(input$labelA, "-Annuity"),
+        paste0(input$labelA, "-Equal"),
+        paste0(input$labelB, "-Annuity"),
+        paste0(input$labelB, "-Equal")
+      )
+    )
     
     p <- ggplot(dfLong, aes(x=month, y=Value, color=style, linetype=style)) +
       geom_line(size=1.2) +
@@ -924,28 +1018,42 @@ server <- function(input, output) {
     principalA <- input$full_priceA - input$down_paymentA
     dAann$pctPrincipal <- (dAann$total_principal_paid / principalA) * 100
     dAann$pctInterest  <- (dAann$total_interest_paid  / principalA) * 100
-    dAann$label        <- "A-Annuity"
+    dAann$label        <- paste0(input$labelA, "-Annuity")
     
     # Data A Equal
     dAeq   <- compareDataA_Equal()
     dAeq$pctPrincipal <- (dAeq$total_principal_paid / principalA) * 100
     dAeq$pctInterest  <- (dAeq$total_interest_paid  / principalA) * 100
-    dAeq$label        <- "A-Equal"
+    dAeq$label        <- paste0(input$labelA, "-Equal")
     
     # Data B Annuity
     dBann  <- compareDataB_Annuity()
     principalB <- input$full_priceB - input$down_paymentB
     dBann$pctPrincipal <- (dBann$total_principal_paid / principalB) * 100
     dBann$pctInterest  <- (dBann$total_interest_paid  / principalB) * 100
-    dBann$label        <- "B-Annuity"
+    dBann$label        <- paste0(input$labelB, "-Annuity")
     
     # Data B Equal
     dBeq   <- compareDataB_Equal()
     dBeq$pctPrincipal <- (dBeq$total_principal_paid / principalB) * 100
     dBeq$pctInterest  <- (dBeq$total_interest_paid  / principalB) * 100
-    dBeq$label        <- "B-Equal"
+    dBeq$label        <- paste0(input$labelB, "-Equal")
     
     # Combine
+    combined <- rbind(
+      data.frame(month = dAann$month, pctPrincipal = dAann$pctPrincipal,
+                 pctInterest = dAann$pctInterest, style = dAann$label),
+      data.frame(month = dAeq$month, pctPrincipal = dAeq$pctPrincipal,
+                 pctInterest = dAeq$pctInterest, style = dAeq$label),
+      data.frame(month = dBann$month, pctPrincipal = dBann$pctPrincipal,
+                 pctInterest = dBann$pctInterest, style = dBann$label),
+      data.frame(month = dBeq$month, pctPrincipal = dBeq$pctPrincipal,
+                 pctInterest = dBeq$total_interest_paid, style = dBeq$label)  # minor fix: was dBeq$total_interest_paid? let's correct the variable
+    )
+    
+    # Actually fix: for dBeq, we must write the same pattern as above:
+    # This might be a small user-coded error in the prior lines 
+    # We'll re-build that row properly:
     combined <- rbind(
       data.frame(month = dAann$month, pctPrincipal = dAann$pctPrincipal,
                  pctInterest = dAann$pctInterest, style = dAann$label),
@@ -961,10 +1069,25 @@ server <- function(input, output) {
     dfLong <- melt(combined, id.vars=c("month","style"),
                    variable.name="Metric", value.name="Value")
     
-    color_values <- c("A-Annuity"="blue4", "A-Equal"="blue", 
-                      "B-Annuity"="red4",  "B-Equal"="red")
-    linetype_values <- c("A-Annuity"="solid","A-Equal"="dashed",
-                         "B-Annuity"="solid","B-Equal"="dashed")
+    # Manual color + linetype
+    color_values <- setNames(
+      c("blue4", "blue", "red4", "red"),
+      c(
+        paste0(input$labelA, "-Annuity"),
+        paste0(input$labelA, "-Equal"),
+        paste0(input$labelB, "-Annuity"),
+        paste0(input$labelB, "-Equal")
+      )
+    )
+    linetype_values <- setNames(
+      c("solid", "dashed", "solid", "dashed"),
+      c(
+        paste0(input$labelA, "-Annuity"),
+        paste0(input$labelA, "-Equal"),
+        paste0(input$labelB, "-Annuity"),
+        paste0(input$labelB, "-Equal")
+      )
+    )
     
     p <- ggplot(dfLong, aes(x=month, y=Value, color=style, linetype=style)) +
       geom_line(size=1.2) +
@@ -986,12 +1109,9 @@ server <- function(input, output) {
     g <- ggplotly(p, tooltip=c("x","y")) %>%
       layout(legend = list(x=1, y=1))
     
-    # We'll also remove decimals from axis if desired:
-    #   We'll just rely on the custom label above for the y-axis.
     no_decimal_plotly(g)
   })
 }
 
 # Run the app
 shinyApp(ui = ui, server = server)
-
