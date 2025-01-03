@@ -213,7 +213,7 @@ simulate_renting_and_investing <- function(
 # UI
 # --------------------------------------------
 ui <- fluidPage(
-  titlePanel(textOutput("app_title")),
+  titlePanel("Kodulaen & investeeringud"),
   
   sidebarLayout(
     sidebarPanel(
@@ -471,7 +471,7 @@ server <- function(input, output, session) {
                              </ul>"
     ),
     EST = list(
-      app_title = "Kodulaen ja investeerimisportfoolio simulatsioon",
+      app_title = "Kodulaenu ja investeerimisportfoolio simulatsioon",
       gen_params_title = "Üldised parameetrid",
       monthly_income_label = "Igakuine sissetulek (€):",
       monthly_income_help = "Sisesta oma igakuine netosissetulek.",
@@ -869,6 +869,10 @@ server <- function(input, output, session) {
   # -------------------------------------------------------------------
   monthlyAllocA <- reactive({
     req(input$full_priceA, input$down_paymentA)
+    validate(
+      need(!is.na(input$annual_mort_rate) && input$annual_mort_rate >= 0,
+           "Please insert a valid annual mortgage rate.")
+    )
     principalA <- input$full_priceA - input$down_paymentA
     validate(
       need(principalA >= 0, paste(t("down_paymentA_label"), "cannot exceed Full Price."))
@@ -932,6 +936,10 @@ server <- function(input, output, session) {
   # -------------------------------------------------------------------
   monthlyAllocB <- reactive({
     req(input$full_priceB, input$down_paymentB)
+    validate(
+      need(!is.na(input$annual_mort_rate) && input$annual_mort_rate >= 0,
+           "Please insert a valid annual mortgage rate.")
+    )
     principalB <- input$full_priceB - input$down_paymentB
     validate(
       need(principalB >= 0, paste(t("down_paymentB_label"), "cannot exceed Full Price."))
