@@ -1,8 +1,8 @@
 library(shiny)
 library(ggplot2)
 library(reshape2)
-library(scales)    # For formatting monetary values
-library(plotly)    # For interactive plots
+library(scales)
+library(plotly)
 
 # --------------------------------------------
 # Helper Functions
@@ -28,7 +28,8 @@ simulate_mortgage_and_investing <- function(
     annual_invest_return,
     annual_property_growth,
     mortgage_style = 'annuity',
-    initial_property_value
+    initial_property_value,
+    initial_investment = 0  # <-- ADDED ARGUMENT
 ) {
   # Number of months
   months <- years * 12
@@ -55,9 +56,9 @@ simulate_mortgage_and_investing <- function(
   
   # Tracking variables
   curr_principal   <- principal
-  investment       <- 0.0
+  investment       <- initial_investment  # <-- START WITH THE PROVIDED INITIAL INVESTMENT
   property_val     <- initial_property_value
-  cum_investment   <- 0.0
+  cum_investment   <- initial_investment
   running_interest <- 0.0
   
   # Pre-calc monthly mortgage payment (annuity)
@@ -95,7 +96,7 @@ simulate_mortgage_and_investing <- function(
     curr_principal <- curr_principal - principal_pay
     if (curr_principal < 0) curr_principal <- 0
     
-    # 5) Investment
+    # 5) Investment (whatever is left in total_monthly_budget after mortgage)
     invest_this <- total_monthly_budget - mort_payment
     if (invest_this < 0) invest_this <- 0
     
@@ -136,8 +137,8 @@ simulate_mortgage_and_investing <- function(
   )
   
   # total_equity = real_estate_equity + inv_balance
-  df$total_equity          <- df$real_estate_equity + df$inv_balance
-  df$total_principal_paid  <- cumsum(df$monthly_principal_paid)
+  df$total_equity         <- df$real_estate_equity + df$inv_balance
+  df$total_principal_paid <- cumsum(df$monthly_principal_paid)
   
   return(df)
 }
@@ -279,6 +280,9 @@ ui <- fluidPage(
       uiOutput("down_paymentA_ui"),
       uiOutput("mortgage_styleA_ui"),
       
+      # NEW: Initial Investment for A
+      uiOutput("initial_investA_ui"),  # <-- ADDED
+      
       uiOutput("investA_ui"),
       
       hr(),
@@ -289,6 +293,9 @@ ui <- fluidPage(
       uiOutput("full_priceB_ui"),
       uiOutput("down_paymentB_ui"),
       uiOutput("mortgage_styleB_ui"),
+      
+      # NEW: Initial Investment for B
+      uiOutput("initial_investB_ui"),  # <-- ADDED
       
       uiOutput("investB_ui"),
       
@@ -418,6 +425,9 @@ server <- function(input, output, session) {
       mortgage_styleB_label = "Mortgage Style:",
       investB_label = "Monthly Investment for B:",
       
+      # Added translation key for the new "Initial Investment" field
+      initial_investAB_label = "Initial Investment (€):",
+      
       propertyC_title = "Rent & Invest",
       labelC_label = "Label C:",
       start_investC_label = "Initial Investment (€):",
@@ -520,6 +530,9 @@ server <- function(input, output, session) {
       down_paymentB_label = "Sissemakse (€):",
       mortgage_styleB_label = "Kodulaenu tüüp:",
       investB_label = "Igakuiselt investeeritud summa:",
+      
+      # Added translation key for the new "Initial Investment" field in EST
+      initial_investAB_label = "Alginvesteering (€):",
       
       propertyC_title = "Üür & investeerimine",
       labelC_label = "Nimetus C:",
@@ -670,13 +683,13 @@ server <- function(input, output, session) {
   
   output$optionA_mortgagePayment <- renderText({
     req(monthlyAllocA())
-    paste0(t("optionA_mortgagePayment_label"), " €", 
+    paste0(t("optionA_mortgagePayment_label"), " €",
            formatC(round(monthlyAllocA()$mortgage, digits = 2), format="f", digits = 2))
   })
   
   output$optionA_investment <- renderText({
     req(monthlyAllocA())
-    paste0(t("optionA_investment_label"), " €", 
+    paste0(t("optionA_investment_label"), " €",
            formatC(round(monthlyAllocA()$invest, digits = 2), format="f", digits = 0))
   })
   
@@ -687,13 +700,13 @@ server <- function(input, output, session) {
   
   output$optionB_mortgagePayment <- renderText({
     req(monthlyAllocB())
-    paste0(t("optionB_mortgagePayment_label"), " €", 
+    paste0(t("optionB_mortgagePayment_label"), " €",
            formatC(round(monthlyAllocB()$mortgage, digits = 2), format="f", digits = 2))
   })
   
   output$optionB_investment <- renderText({
     req(monthlyAllocB())
-    paste0(t("optionB_investment_label"), " €", 
+    paste0(t("optionB_investment_label"), " €",
            formatC(round(monthlyAllocB()$invest, digits = 2), format="f", digits = 0))
   })
   
@@ -704,13 +717,13 @@ server <- function(input, output, session) {
   
   output$optionC_rentPayment <- renderText({
     req(monthlyAllocC())
-    paste0(t("optionC_rentPayment_label"), " €", 
+    paste0(t("optionC_rentPayment_label"), " €",
            formatC(round(monthlyAllocC()$rent, digits = 2), format="f", digits = 0))
   })
   
   output$optionC_investment <- renderText({
     req(monthlyAllocC())
-    paste0(t("optionC_investment_label"), " €", 
+    paste0(t("optionC_investment_label"), " €",
            formatC(round(monthlyAllocC()$invest, digits = 2), format="f", digits = 0))
   })
   
@@ -746,6 +759,17 @@ server <- function(input, output, session) {
                 selected = "annuity")
   })
   
+  # ADD this new UI for A
+  output$initial_investA_ui <- renderUI({
+    numericInput(
+      "initial_investA",
+      t("initial_investAB_label"),  # "Initial Investment (€):" in ENG, or "Alginvesteering (€):" in EST
+      value = 0,  # default 0
+      min = 0,
+      step = 1000
+    )
+  })
+  
   output$investA_ui <- renderUI({
     sliderInput("investA", t("investA_label"), 
                 min = 0, max = 5000, value = 2130, step = 50)
@@ -777,6 +801,17 @@ server <- function(input, output, session) {
                   "Equal Principal" = "equal_principal"
                 ), 
                 selected = "annuity")
+  })
+  
+  # ADD this new UI for B
+  output$initial_investB_ui <- renderUI({
+    numericInput(
+      "initial_investB",
+      t("initial_investAB_label"), 
+      value = 0, 
+      min = 0,
+      step = 1000
+    )
   })
   
   output$investB_ui <- renderUI({
@@ -893,7 +928,10 @@ server <- function(input, output, session) {
     
     if (leftoverA < 0) {
       # Mortgage payment alone exceeds your monthly pool => zero invest
-      showNotification(paste(t("optionA_mortgagePayment_label"), "exceeds your available pool. Setting investment to 0."), type="warning")
+      showNotification(
+        paste(t("optionA_mortgagePayment_label"), "exceeds your available pool. Setting investment to 0."),
+        type="warning"
+      )
       investsA <- 0
     } else {
       # user-chosen invests from slider
@@ -927,7 +965,8 @@ server <- function(input, output, session) {
       annual_invest_return  = input$annual_invest_return / 100,
       annual_property_growth= input$annual_property_growth / 100,
       mortgage_style        = input$mortgage_styleA,
-      initial_property_value= input$full_priceA
+      initial_property_value= input$full_priceA,
+      initial_investment    = input$initial_investA   # <-- Pass to simulation
     )
   })
   
@@ -957,7 +996,10 @@ server <- function(input, output, session) {
     leftoverB <- common_pool() - required_mort_payment
     
     if (leftoverB < 0) {
-      showNotification(paste(t("optionB_mortgagePayment_label"), "exceeds your available pool. Setting investment to 0."), type="warning")
+      showNotification(
+        paste(t("optionB_mortgagePayment_label"), "exceeds your available pool. Setting investment to 0."),
+        type="warning"
+      )
       investsB <- 0
     } else {
       investsB <- input$investB
@@ -989,7 +1031,8 @@ server <- function(input, output, session) {
       annual_invest_return  = input$annual_invest_return / 100,
       annual_property_growth= input$annual_property_growth / 100,
       mortgage_style        = input$mortgage_styleB,
-      initial_property_value= input$full_priceB
+      initial_property_value= input$full_priceB,
+      initial_investment    = input$initial_investB   # <-- Pass to simulation
     )
   })
   
@@ -1003,7 +1046,10 @@ server <- function(input, output, session) {
     
     if (leftoverC < 0) {
       # Rent payment alone exceeds your monthly pool => zero invest
-      showNotification(paste(t("optionC_rentPayment_label"), "exceeds your available pool. Setting investment to 0."), type="warning")
+      showNotification(
+        paste(t("optionC_rentPayment_label"), "exceeds your available pool. Setting investment to 0."),
+        type="warning"
+      )
       investsC <- 0
     } else {
       investsC <- input$investC
@@ -1135,9 +1181,6 @@ server <- function(input, output, session) {
     
     # Convert Year to integer
     dfOut$Year <- as.integer(dfOut$Year)
-    
-    # All numeric columns are already rounded to integers.
-    # Formatting is handled in renderTable.
     
     dfOut
   })
@@ -1294,14 +1337,6 @@ server <- function(input, output, session) {
     
     dLong <- melt(dfAll, id.vars=c("month","Option"))
     
-    # Define separate labels for each metric
-    metric_labels <- list(
-      "inv_contrib"        = "Cumulative Invested (InvContrib)",
-      "inv_gains"          = "Investment Gains (InvGains)",
-      "property_app"       = "Property Appreciation",
-      "real_estate_equity" = "Real Estate Equity"
-    )
-    
     # Translate labels
     translated_metric_labels <- list(
       "inv_contrib"        = if(lang() == "ENG") "Cumulative Invested (InvContrib)" else "Kogunenud Investeering (InvContrib)",
@@ -1348,7 +1383,8 @@ server <- function(input, output, session) {
       annual_invest_return  = input$annual_invest_return / 100,
       annual_property_growth= input$annual_property_growth / 100,
       mortgage_style        = "annuity",
-      initial_property_value= input$full_priceA
+      initial_property_value= input$full_priceA,
+      initial_investment    = input$initial_investA  # compare with same initial investment
     )
   })
   compareDataA_Equal <- reactive({
@@ -1363,7 +1399,8 @@ server <- function(input, output, session) {
       annual_invest_return  = input$annual_invest_return / 100,
       annual_property_growth= input$annual_property_growth / 100,
       mortgage_style        = "equal_principal",
-      initial_property_value= input$full_priceA
+      initial_property_value= input$full_priceA,
+      initial_investment    = input$initial_investA
     )
   })
   
@@ -1380,7 +1417,8 @@ server <- function(input, output, session) {
       annual_invest_return  = input$annual_invest_return / 100,
       annual_property_growth= input$annual_property_growth / 100,
       mortgage_style        = "annuity",
-      initial_property_value= input$full_priceB
+      initial_property_value= input$full_priceB,
+      initial_investment    = input$initial_investB
     )
   })
   compareDataB_Equal <- reactive({
@@ -1395,7 +1433,8 @@ server <- function(input, output, session) {
       annual_invest_return  = input$annual_invest_return / 100,
       annual_property_growth= input$annual_property_growth / 100,
       mortgage_style        = "equal_principal",
-      initial_property_value= input$full_priceB
+      initial_property_value= input$full_priceB,
+      initial_investment    = input$initial_investB
     )
   })
   
