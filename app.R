@@ -946,15 +946,17 @@ server <- function(input, output, session) {
       dfOut[[paste0("PctOwned_", input$labelA)]][i]           <- round(pctA, 0)
       
       dfOut[[paste0("TotalInterestPaid_", input$labelA)]][i]  <- round(get_val(eqA[[i]], "TotalInterestPaid"))
+      dfOut[[paste0("YearlyMortgagePaid_", input$labelA)]][i] <- round(get_val(eqA[[i]], "YearlyMortgagePaid"))
+      dfOut[[paste0("PrincipalOwed_", input$labelA)]][i]      <- round(get_val(eqA[[i]], "PrincipalOwed"))
+      dfOut[[paste0("RealEstateEquity_", input$labelA)]][i]   <- round(get_val(eqA[[i]], "RealEstateEquity"))
+      
       dfOut[[paste0("InvContrib_", input$labelA)]][i]         <- round(get_val(eqA[[i]], "InvContrib"))
       dfOut[[paste0("InvGains_", input$labelA)]][i]           <- round(get_val(eqA[[i]], "InvGains"))
       dfOut[[paste0("InvBalance_", input$labelA)]][i]         <- round(get_val(eqA[[i]], "InvBalance"))
       dfOut[[paste0("TotalEquity_", input$labelA)]][i]        <- round(get_val(eqA[[i]], "TotalEquity"))
       
-      dfOut[[paste0("YearlyMortgagePaid_", input$labelA)]][i] <- round(get_val(eqA[[i]], "YearlyMortgagePaid"))
-      dfOut[[paste0("RealEstateEquity_", input$labelA)]][i]   <- round(get_val(eqA[[i]], "RealEstateEquity"))
-      dfOut[[paste0("PrincipalOwed_", input$labelA)]][i]      <- round(get_val(eqA[[i]], "PrincipalOwed"))
-    }
+      
+          }
     
     # Fill columns for B
     for (i in seq_along(yrs_vector)) {
@@ -968,14 +970,15 @@ server <- function(input, output, session) {
       dfOut[[paste0("PctOwned_", input$labelB)]][i]           <- round(pctB, 0)
       
       dfOut[[paste0("TotalInterestPaid_", input$labelB)]][i]  <- round(get_val(eqB[[i]], "TotalInterestPaid"))
+      dfOut[[paste0("YearlyMortgagePaid_", input$labelB)]][i] <- round(get_val(eqB[[i]], "YearlyMortgagePaid"))
+      dfOut[[paste0("PrincipalOwed_", input$labelB)]][i]      <- round(get_val(eqB[[i]], "PrincipalOwed"))
+      dfOut[[paste0("RealEstateEquity_", input$labelB)]][i]   <- round(get_val(eqB[[i]], "RealEstateEquity"))
+      
+            
       dfOut[[paste0("InvContrib_", input$labelB)]][i]         <- round(get_val(eqB[[i]], "InvContrib"))
       dfOut[[paste0("InvGains_", input$labelB)]][i]           <- round(get_val(eqB[[i]], "InvGains"))
       dfOut[[paste0("InvBalance_", input$labelB)]][i]         <- round(get_val(eqB[[i]], "InvBalance"))
       dfOut[[paste0("TotalEquity_", input$labelB)]][i]        <- round(get_val(eqB[[i]], "TotalEquity"))
-      
-      dfOut[[paste0("YearlyMortgagePaid_", input$labelB)]][i] <- round(get_val(eqB[[i]], "YearlyMortgagePaid"))
-      dfOut[[paste0("RealEstateEquity_", input$labelB)]][i]   <- round(get_val(eqB[[i]], "RealEstateEquity"))
-      dfOut[[paste0("PrincipalOwed_", input$labelB)]][i]      <- round(get_val(eqB[[i]], "PrincipalOwed"))
     }
     
     # Fill columns for C (rent scenario => mostly zero or NA for mortgage stuff)
@@ -984,15 +987,17 @@ server <- function(input, output, session) {
       dfOut[[paste0("PropertyApp_", input$labelC)]][i]        <- round(get_val(eqC[[i]], "PropertyApp"))
       dfOut[[paste0("TotalPrincipalPaid_", input$labelC)]][i] <- NA
       dfOut[[paste0("PctOwned_", input$labelC)]][i]           <- 0
+      
       dfOut[[paste0("TotalInterestPaid_", input$labelC)]][i]  <- NA
+      dfOut[[paste0("YearlyMortgagePaid_", input$labelC)]][i] <- 0
+      dfOut[[paste0("PrincipalOwed_", input$labelC)]][i]      <- NA
+      dfOut[[paste0("RealEstateEquity_", input$labelC)]][i]   <- 0
+      
+            
       dfOut[[paste0("InvContrib_", input$labelC)]][i]         <- round(get_val(eqC[[i]], "InvContrib"))
       dfOut[[paste0("InvGains_", input$labelC)]][i]           <- round(get_val(eqC[[i]], "InvGains"))
       dfOut[[paste0("InvBalance_", input$labelC)]][i]         <- round(get_val(eqC[[i]], "InvBalance"))
       dfOut[[paste0("TotalEquity_", input$labelC)]][i]        <- round(get_val(eqC[[i]], "TotalEquity"))
-      
-      dfOut[[paste0("YearlyMortgagePaid_", input$labelC)]][i] <- 0
-      dfOut[[paste0("RealEstateEquity_", input$labelC)]][i]   <- 0
-      dfOut[[paste0("PrincipalOwed_", input$labelC)]][i]      <- NA
     }
     
     dfOut$Year <- as.integer(dfOut$Year)
